@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'DungGeunMo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/DungGeunMo.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  font-family: 'NeoDunggeunmo', 'DungGeunMo', 'Press Start 2P', monospace, sans-serif;
+  color-scheme: dark;
+}
+
+.font-pixel {
+  font-family: 'NeoDunggeunmo', 'DungGeunMo', 'Press Start 2P', monospace;
+  image-rendering: pixelated;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a24;
+  color: #e0e7ff;
+  overflow: hidden;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+}
+
+/* Pixel art rendering */
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Custom retro scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e1e2f;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a4d6b;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
+}
+
+/* Pixel button border styles */
+.pixel-box {
+  box-shadow: 
+    -3px 0 0 0 #000,
+    3px 0 0 0 #000,
+    0 -3px 0 0 #000,
+    0 3px 0 0 #000;
+}
+
+.pixel-box-sm {
+  box-shadow: 
+    -2px 0 0 0 #000,
+    2px 0 0 0 #000,
+    0 -2px 0 0 #000,
+    0 2px 0 0 #000;
+}
+
+/* Prevent mobile callout, magnifying glass, selection and long-press cancel */
+*, *::before, *::after {
+  -webkit-touch-callout: none;
+}
+
+.no-callout {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  touch-action: none !important;
+  -webkit-user-drag: none !important;
+}

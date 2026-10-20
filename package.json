@@ -1,0 +1,19 @@
+{
+  "name": "dotroom",
+  "version": "1.0.0",
+  "description": "도트 그래픽 기반 익명 온라인 회의실",
+  "scripts": {
+    "server": "node server/server.js",
+    "client": "npm --prefix client run dev",
+    "dev": "node -e \"const { spawn } = require('child_process'); spawn('node', ['server/server.js'], { stdio: 'inherit', shell: true }); spawn('npm', ['--prefix', 'client', 'run', 'dev'], { stdio: 'inherit', shell: true });\""
+  },
+  "keywords": [
+    "pixel-art",
+    "pokemon-retro",
+    "socket.io",
+    "dotroom",
+    "realtime-meeting"
+  ],
+  "author": "",
+  "license": "ISC"
+}

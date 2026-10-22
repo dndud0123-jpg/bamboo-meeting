@@ -334,8 +334,15 @@ export default function App() {
     fetch('/api/info')
       .then(r => r.json())
       .then(info => {
-        if (info.localIp && info.localIp !== 'localhost') {
-          setJoinUrl(`http://${info.localIp}:${info.port || 5173}`);
+        if (typeof window !== 'undefined' && window.location.origin) {
+          // If deployed on public cloud (e.g. Render), always bind to current public origin!
+          if (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
+            setJoinUrl(window.location.origin);
+            return;
+          }
+        }
+        if (info.localIp && info.localIp !== 'localhost' && !info.localIp.startsWith('10.')) {
+          setJoinUrl(`http://${info.localIp}:${info.port || 3001}`);
         } else {
           setJoinUrl(window.location.origin);
         }

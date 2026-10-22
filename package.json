@@ -1,18 +1,20 @@
 {
-  "name": "dotroom",
+  "name": "bamboo-meeting",
   "version": "1.0.0",
-  "description": "도트 그래픽 기반 익명 온라인 회의실",
+  "description": "놀러와요, 대나무숲 - 도트 그래픽 실시간 익명 회의실 (Single-Origin All-in-One)",
   "scripts": {
+    "build": "cd client && npm install && npm run build && cd ../server && npm install",
+    "start": "cd server && node server.js",
     "server": "node server/server.js",
     "client": "npm --prefix client run dev",
     "dev": "node -e \"const { spawn } = require('child_process'); spawn('node', ['server/server.js'], { stdio: 'inherit', shell: true }); spawn('npm', ['--prefix', 'client', 'run', 'dev'], { stdio: 'inherit', shell: true });\""
   },
   "keywords": [
     "pixel-art",
-    "pokemon-retro",
     "socket.io",
-    "dotroom",
-    "realtime-meeting"
+    "bamboo-meeting",
+    "realtime-meeting",
+    "single-origin"
   ],
   "author": "",
   "license": "ISC"

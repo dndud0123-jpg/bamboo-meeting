@@ -3,8 +3,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const os = require('os');
+const path = require('path');
 
 const app = express();
+const PORT = process.env.PORT || 3001;
+
 app.use(cors());
 app.use(express.json());
 
@@ -35,6 +38,43 @@ const socketToPlayerId = new Map();
 const chatHistory = [];
 const MAX_HISTORY = 100;
 
+// In-memory Cork Notice Board Posts
+const boardPosts = [
+  {
+    id: 'post_seed_1',
+    author: '대나무숲 운영자',
+    avatarIndex: 0,
+    title: '🎋 대나무숲 비밀 게시판 오픈!',
+    content: '익명으로 자유롭게 하고 싶은 이야기나 건의사항을 남겨보세요. 공감되는 글에는 하트(❤️)를 눌러주세요!',
+    likes: 12,
+    likedUsers: [],
+    color: 'yellow',
+    createdAt: Date.now() - 3600000 * 2
+  },
+  {
+    id: 'post_seed_2',
+    author: '야근요정',
+    avatarIndex: 4,
+    title: '오늘 저녁 메뉴 추천받습니다 🍜',
+    content: '마을 상점 쪽에 새로 생긴 라멘집 괜찮나요? 맛있는 집 아시는 분 댓글이나 하트 남겨주세요 ㅎㅎ',
+    likes: 7,
+    likedUsers: [],
+    color: 'pink',
+    createdAt: Date.now() - 3600000
+  },
+  {
+    id: 'post_seed_3',
+    author: '신입시바',
+    avatarIndex: 2,
+    title: '도트 마을 공기 너무 맑네요 🐾',
+    content: '마을 분수대랑 집들이 너무 아기자기해서 산책만 해도 힐링돼요! 다들 오늘도 파이팅입니다!',
+    likes: 15,
+    likedUsers: [],
+    color: 'mint',
+    createdAt: Date.now() - 1800000
+  }
+];
+
 // High-concurrency 20Hz Tickrate Batching Map
 const dirtyPlayers = new Map();
 
@@ -56,13 +96,26 @@ setInterval(() => {
 app.get('/api/info', (req, res) => {
   res.json({
     localIp: getLocalIpAddress(),
-    port: 5173,
+    port: PORT,
     onlineCount: players.size
   });
 });
 
 app.get('/api/chat', (req, res) => {
   res.json(chatHistory);
+});
+
+app.get('/api/board', (req, res) => {
+  res.json(boardPosts);
+});
+
+// Single-Origin Frontend Hosting: Serve built React static assets
+const clientDistPath = path.join(__dirname, '../client/dist');
+app.use(express.static(clientDistPath));
+
+// SPA Fallback: Serve index.html for all non-API routes (Express 4 & 5 compatible)
+app.use((req, res) => {
+  res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 io.on('connection', (socket) => {
@@ -96,7 +149,8 @@ io.on('connection', (socket) => {
     socket.emit('init_state', {
       selfId: playerId,
       players: Array.from(players.values()),
-      chatHistory: chatHistory.slice(-50)
+      chatHistory: chatHistory.slice(-50),
+      boardPosts: boardPosts
     });
 
     // Notify other players
@@ -175,6 +229,91 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('chat_message', message);
   });
 
+  // 5. Create Cork Board Post
+  socket.on('create_post', (data) => {
+    const playerId = socketToPlayerId.get(socket.id) || socket.id;
+    const player = players.get(playerId);
+    const author = player ? player.nickname : (data.author || '익명 주민');
+    const avatarIndex = player ? player.charIndex : (typeof data.avatarIndex === 'number' ? data.avatarIndex : 0);
+
+    const title = (data.title || '').trim().slice(0, 30);
+    const content = (data.content || '').trim().slice(0, 200);
+    if (!title || !content) return;
+
+    const newPost = {
+      id: 'post_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      author,
+      authorId: data.authorId || playerId,
+      avatarIndex,
+      title,
+      content,
+      likes: 0,
+      likedUsers: [],
+      color: data.color || 'yellow',
+      createdAt: Date.now()
+    };
+
+    boardPosts.unshift(newPost);
+    io.emit('post_created', newPost);
+  });
+
+  // 6. Toggle Like Cork Board Post (Add +1 or Cancel -1)
+  const handleToggleLike = ({ postId, userId }) => {
+    const post = boardPosts.find((p) => p.id === postId);
+    if (!post) return;
+
+    if (!post.likedUsers) {
+      post.likedUsers = [];
+    }
+
+    const uId = userId || socketToPlayerId.get(socket.id) || socket.id;
+    const userIndex = post.likedUsers.indexOf(uId);
+    let isLikedNow = false;
+
+    if (userIndex === -1) {
+      // 좋아요 추가
+      post.likedUsers.push(uId);
+      post.likes = (post.likes || 0) + 1;
+      isLikedNow = true;
+    } else {
+      // 좋아요 취소
+      post.likedUsers.splice(userIndex, 1);
+      post.likes = Math.max(0, (post.likes || 1) - 1);
+      isLikedNow = false;
+    }
+
+    // 전체 클라이언트에 업데이트된 포스트 및 랭킹 브로드캐스트
+    io.emit('post_liked_updated', {
+      postId,
+      likes: post.likes,
+      likedUsers: post.likedUsers,
+      isLikedNow,
+      updatedPosts: boardPosts.sort((a, b) => (b.likes || 0) - (a.likes || 0))
+    });
+    // 호환성을 위한 기존 이벤트 발송
+    io.emit('post_liked', {
+      postId: post.id,
+      likes: post.likes,
+      likedUsers: post.likedUsers
+    });
+  };
+
+  socket.on('toggle_like_post', handleToggleLike);
+  socket.on('like_post', handleToggleLike);
+
+  // 7. Delete Cork Board Post (Author only)
+  socket.on('delete_post', ({ postId, userId }) => {
+    const postIndex = boardPosts.findIndex((p) => p.id === postId);
+    if (postIndex === -1) return;
+
+    const uId = userId || socketToPlayerId.get(socket.id) || socket.id;
+    // 본인이 작성한 글인지 검증
+    if (boardPosts[postIndex].authorId === uId) {
+      boardPosts.splice(postIndex, 1);
+      io.emit('post_deleted', { postId });
+    }
+  });
+
   // 4. Disconnect
   socket.on('disconnect', () => {
     const playerId = socketToPlayerId.get(socket.id);
@@ -203,7 +342,6 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
   const localIp = getLocalIpAddress();
   console.log(`🚀 DotRoom Server running on port ${PORT}`);

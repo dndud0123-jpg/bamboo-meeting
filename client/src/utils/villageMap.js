@@ -31,7 +31,10 @@ export const COLLISION_BOXES = [
   { x: 0, y: 450 * MAP_SCALE, w: 165 * MAP_SCALE, h: 110 * MAP_SCALE },
 
   // 8. Bottom-right corner trees
-  { x: 440 * MAP_SCALE, y: 520 * MAP_SCALE, w: 170 * MAP_SCALE, h: 40 * MAP_SCALE }
+  { x: 440 * MAP_SCALE, y: 520 * MAP_SCALE, w: 170 * MAP_SCALE, h: 40 * MAP_SCALE },
+
+  // 9. Central Cork Notice Board base
+  { x: 588, y: 446, w: 52, h: 22 }
 ];
 
 // Helper: Check rectangle overlap

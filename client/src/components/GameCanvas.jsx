@@ -19,7 +19,9 @@ export default function GameCanvas({
   onPlayerJump,
   virtualDirection,
   jumpSignal,
-  remoteJumpTrigger
+  remoteJumpTrigger,
+  onOpenBoard,
+  isModalOpen
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -90,6 +92,19 @@ export default function GameCanvas({
   useEffect(() => {
     myProfileRef.current = myProfile;
   }, [myProfile]);
+
+  const onOpenBoardRef = useRef(onOpenBoard);
+  useEffect(() => {
+    onOpenBoardRef.current = onOpenBoard;
+  }, [onOpenBoard]);
+
+  const isModalOpenRef = useRef(isModalOpen);
+  useEffect(() => {
+    isModalOpenRef.current = isModalOpen;
+  }, [isModalOpen]);
+
+  const isNearBoardRef = useRef(false);
+  const latestCamRef = useRef({ camX: 0, camY: 0 });
 
   // Remote players jump physics state map
   const remoteJumpsRef = useRef(new Map());
@@ -191,10 +206,15 @@ export default function GameCanvas({
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (isModalOpenRef.current) return;
 
-      // Spacebar Jump
+      // Spacebar: if near board, open board! Otherwise, jump!
       if (e.code === 'Space') {
         e.preventDefault();
+        if (isNearBoardRef.current && onOpenBoardRef.current) {
+          onOpenBoardRef.current();
+          return;
+        }
         triggerLocalJump();
         return;
       }
@@ -283,10 +303,10 @@ export default function GameCanvas({
       const vLeft = isVDirObj ? !!vDir.left : (vDir === 'left' || vDir === 'up-left' || vDir === 'down-left');
       const vRight = isVDirObj ? !!vDir.right : (vDir === 'right' || vDir === 'up-right' || vDir === 'down-right');
 
-      const isUp = keysRef.current.up || vUp;
-      const isDown = keysRef.current.down || vDown;
-      const isLeft = keysRef.current.left || vLeft;
-      const isRight = keysRef.current.right || vRight;
+      const isUp = !isModalOpenRef.current && (keysRef.current.up || vUp);
+      const isDown = !isModalOpenRef.current && (keysRef.current.down || vDown);
+      const isLeft = !isModalOpenRef.current && (keysRef.current.left || vLeft);
+      const isRight = !isModalOpenRef.current && (keysRef.current.right || vRight);
 
       if (isUp) dy -= moveSpeed;
       if (isDown) dy += moveSpeed;
@@ -410,12 +430,143 @@ export default function GameCanvas({
       }
 
       ctx.translate(Math.round(camX), Math.round(camY));
+      latestCamRef.current = { camX: Math.round(camX), camY: Math.round(camY) };
 
       // 3. Draw Littleroot Town Background
       if (bgImageRef.current && bgImageRef.current.complete) {
         ctx.drawImage(bgImageRef.current, 0, 0, MAP_WIDTH, MAP_HEIGHT);
       } else {
         drawFallbackVillage(ctx);
+      }
+
+      // 3.1 Draw Interactive Cork Notice Board (Village Center)
+      const BOARD_X = 588;
+      const BOARD_Y = 416;
+      const BOARD_W = 54;
+      const BOARD_H = 48;
+
+      // Base shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.beginPath();
+      ctx.ellipse(BOARD_X + BOARD_W / 2, BOARD_Y + BOARD_H - 1, 30, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Wooden Posts
+      ctx.fillStyle = '#422510';
+      ctx.fillRect(BOARD_X + 9, BOARD_Y + 28, 7, 18);
+      ctx.fillRect(BOARD_X + BOARD_W - 16, BOARD_Y + 28, 7, 18);
+      ctx.strokeStyle = '#271406';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(BOARD_X + 9, BOARD_Y + 28, 7, 18);
+      ctx.strokeRect(BOARD_X + BOARD_W - 16, BOARD_Y + 28, 7, 18);
+
+      // Wooden Board Outer Frame
+      ctx.fillStyle = '#593418';
+      ctx.fillRect(BOARD_X, BOARD_Y, BOARD_W, 32);
+      ctx.strokeStyle = '#311907';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(BOARD_X, BOARD_Y, BOARD_W, 32);
+
+      // Board Top Overhang Ridge
+      ctx.fillStyle = '#3c200c';
+      ctx.fillRect(BOARD_X - 2, BOARD_Y - 2, BOARD_W + 4, 4);
+
+      // Inner Cork Texture
+      ctx.fillStyle = '#c79c66';
+      ctx.fillRect(BOARD_X + 3, BOARD_Y + 3, BOARD_W - 6, 26);
+      ctx.fillStyle = '#b78b54';
+      ctx.fillRect(BOARD_X + 8, BOARD_Y + 7, 2, 2);
+      ctx.fillRect(BOARD_X + 22, BOARD_Y + 18, 2, 2);
+      ctx.fillRect(BOARD_X + 41, BOARD_Y + 10, 2, 2);
+      ctx.fillRect(BOARD_X + 35, BOARD_Y + 23, 2, 2);
+
+      // Pinned Colorful Mini Sticky Notes (matching reference image)
+      ctx.fillStyle = '#fef08a';
+      ctx.fillRect(BOARD_X + 6, BOARD_Y + 6, 11, 10);
+      ctx.fillStyle = '#ef4444'; // Red pin
+      ctx.fillRect(BOARD_X + 10, BOARD_Y + 5, 3, 2);
+
+      ctx.fillStyle = '#fbcfe8';
+      ctx.fillRect(BOARD_X + 21, BOARD_Y + 8, 12, 10);
+      ctx.fillStyle = '#38bdf8'; // Blue tape
+      ctx.fillRect(BOARD_X + 25, BOARD_Y + 7, 4, 2);
+
+      ctx.fillStyle = '#bbf7d0';
+      ctx.fillRect(BOARD_X + 37, BOARD_Y + 6, 11, 11);
+      ctx.fillStyle = '#f59e0b'; // Amber tape
+      ctx.fillRect(BOARD_X + 40, BOARD_Y + 5, 5, 2);
+
+      ctx.fillStyle = '#e9d5ff';
+      ctx.fillRect(BOARD_X + 13, BOARD_Y + 18, 12, 9);
+
+      ctx.fillStyle = '#bae6fd';
+      ctx.fillRect(BOARD_X + 30, BOARD_Y + 17, 12, 10);
+
+      // Proximity check to local player
+      const distToBoard = Math.hypot(
+        (local.x + 19) - (BOARD_X + BOARD_W / 2),
+        (local.y + 19) - (BOARD_Y + BOARD_H / 2)
+      );
+      const isNearBoard = distToBoard < 85;
+      isNearBoardRef.current = isNearBoard;
+
+      // Notice Board Title & Interactive Floating Prompt
+      const floatY = Math.sin(timestamp / 140) * 3;
+      if (isNearBoard) {
+        ctx.save();
+        ctx.font = 'bold 11px DungGeunMo, monospace';
+        const promptText = '📜 비밀 게시판 열기 (클릭)';
+        const textM = ctx.measureText(promptText);
+        const pW = textM.width + 16;
+        const pH = 22;
+        const pX = BOARD_X + BOARD_W / 2 - pW / 2;
+        const pY = BOARD_Y - 30 + floatY;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(pX, pY, pW, pH, 6);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(pX, pY, pW, pH);
+          ctx.strokeRect(pX, pY, pW, pH);
+        }
+
+        ctx.fillStyle = '#fef08a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(promptText, BOARD_X + BOARD_W / 2, pY + pH / 2 + 1);
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.font = 'bold 10px DungGeunMo, monospace';
+        const labelText = '📌 비밀 게시판';
+        const textM = ctx.measureText(labelText);
+        const pW = textM.width + 10;
+        const pH = 16;
+        const pX = BOARD_X + BOARD_W / 2 - pW / 2;
+        const pY = BOARD_Y - 18;
+
+        ctx.fillStyle = 'rgba(20, 24, 38, 0.85)';
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(pX, pY, pW, pH, 4);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(pX, pY, pW, pH);
+          ctx.strokeRect(pX, pY, pW, pH);
+        }
+        ctx.fillStyle = '#fde68a';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, BOARD_X + BOARD_W / 2, pY + pH / 2 + 1);
+        ctx.restore();
       }
 
       // 4. Render All Players (Local + Remote) Depth Sorted
@@ -659,11 +810,36 @@ export default function GameCanvas({
     };
   }, [imageLoaded, charSheetLoaded]);
 
+  const handleCanvasClick = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const { camX, camY } = latestCamRef.current;
+    const worldX = clickX - camX;
+    const worldY = clickY - camY;
+
+    // Check click bounds for the Cork Notice Board (588, 416, 54x48) with generous tap padding
+    if (
+      worldX >= 588 - 30 &&
+      worldX <= 588 + 54 + 30 &&
+      worldY >= 416 - 45 &&
+      worldY <= 416 + 48 + 35
+    ) {
+      if (onOpenBoardRef.current) {
+        onOpenBoardRef.current();
+      }
+    }
+  };
+
   return (
     <div ref={containerRef} className="absolute inset-0 w-full h-full overflow-hidden bg-[#0a0d14]">
       <canvas
         ref={canvasRef}
-        className="w-full h-full block pixelated"
+        onClick={handleCanvasClick}
+        className="w-full h-full block pixelated cursor-pointer"
       />
     </div>
   );

@@ -86,20 +86,18 @@ export default function BoardModal({
           }}
         >
           {sortedPosts.length === 0 ? (
-            <div className="h-full min-h-[260px] flex flex-col items-center justify-center text-center p-6 text-amber-950 font-bold">
-              <div className="w-16 h-16 rounded-2xl bg-amber-900/10 border-2 border-dashed border-amber-900/30 flex items-center justify-center mb-3">
-                <MessageSquare size={32} className="text-amber-900/40" />
-              </div>
-              <p className="font-pixel text-sm font-bold mb-1 text-amber-950">
+            <div className="h-full min-h-[260px] flex flex-col items-center justify-center py-16 sm:py-20 text-center select-none">
+              <div className="text-4xl sm:text-5xl mb-3 animate-bounce">📌</div>
+              <p className="font-pixel font-bold text-base sm:text-lg text-amber-950">
                 아직 등록된 이야기가 없습니다.
               </p>
-              <p className="text-xs font-sans text-amber-950/80 mb-4">
-                첫 번째 메모를 남겨보세요!
+              <p className="text-xs sm:text-sm text-amber-900/80 mt-1 font-sans">
+                상단의 [새 글 쓰기] 버튼을 눌러 첫 번째 의견을 남겨보세요!
               </p>
               <button
                 type="button"
                 onClick={onOpenCreate}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl border-2 border-amber-200 shadow-md active:scale-95 text-xs transition-transform cursor-pointer font-sans"
+                className="mt-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl border-2 border-amber-200 shadow-md active:scale-95 text-xs transition-transform cursor-pointer font-sans"
               >
                 ✏️ 첫 번째 메모 남기기
               </button>

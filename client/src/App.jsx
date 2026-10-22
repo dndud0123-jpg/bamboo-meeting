@@ -47,42 +47,8 @@ export default function App() {
     };
   }, []);
 
-  // Cork Notice Board state with initial seed posts fallback
-  const [boardPosts, setBoardPosts] = useState([
-    {
-      id: 'post_seed_1',
-      author: '대나무숲 운영자',
-      avatarIndex: 0,
-      title: '🎋 대나무숲 비밀 게시판 오픈!',
-      content: '도트마을 주민들과 익명으로 솔직한 속마음이나 고민을 나누어보세요. 공감가는 글에는 하트(❤️)를 눌러주세요!',
-      likes: 12,
-      likedUsers: [],
-      color: 'yellow',
-      createdAt: Date.now() - 3600000 * 2
-    },
-    {
-      id: 'post_seed_2',
-      author: '퇴근바라기',
-      avatarIndex: 4,
-      title: '오늘 저녁 메뉴 추천받습니다 🍜',
-      content: '비도 오는데 칼칼한 김치찌개 vs 따끈한 라멘? 맛있는 조합 아시는 분 댓글이나 리액션 남겨주세요 ㅎㅎ',
-      likes: 8,
-      likedUsers: [],
-      color: 'pink',
-      createdAt: Date.now() - 3600000
-    },
-    {
-      id: 'post_seed_3',
-      author: '신입시바',
-      avatarIndex: 2,
-      title: '도트 마을 공기 너무 맑네요 🐾',
-      content: '마을 분수대랑 집들이 너무 아기자기해서 산책만 해도 힐링돼요! 다들 오늘도 파이팅입니다!',
-      likes: 15,
-      likedUsers: [],
-      color: 'mint',
-      createdAt: Date.now() - 1800000
-    }
-  ]);
+  // Cork Notice Board state (Starts completely clean with 0 posts)
+  const [boardPosts, setBoardPosts] = useState([]);
   const [isBoardOpen, setIsBoardOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 

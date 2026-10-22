@@ -38,42 +38,8 @@ const socketToPlayerId = new Map();
 const chatHistory = [];
 const MAX_HISTORY = 100;
 
-// In-memory Cork Notice Board Posts
-const boardPosts = [
-  {
-    id: 'post_seed_1',
-    author: '대나무숲 운영자',
-    avatarIndex: 0,
-    title: '🎋 대나무숲 비밀 게시판 오픈!',
-    content: '익명으로 자유롭게 하고 싶은 이야기나 건의사항을 남겨보세요. 공감되는 글에는 하트(❤️)를 눌러주세요!',
-    likes: 12,
-    likedUsers: [],
-    color: 'yellow',
-    createdAt: Date.now() - 3600000 * 2
-  },
-  {
-    id: 'post_seed_2',
-    author: '야근요정',
-    avatarIndex: 4,
-    title: '오늘 저녁 메뉴 추천받습니다 🍜',
-    content: '마을 상점 쪽에 새로 생긴 라멘집 괜찮나요? 맛있는 집 아시는 분 댓글이나 하트 남겨주세요 ㅎㅎ',
-    likes: 7,
-    likedUsers: [],
-    color: 'pink',
-    createdAt: Date.now() - 3600000
-  },
-  {
-    id: 'post_seed_3',
-    author: '신입시바',
-    avatarIndex: 2,
-    title: '도트 마을 공기 너무 맑네요 🐾',
-    content: '마을 분수대랑 집들이 너무 아기자기해서 산책만 해도 힐링돼요! 다들 오늘도 파이팅입니다!',
-    likes: 15,
-    likedUsers: [],
-    color: 'mint',
-    createdAt: Date.now() - 1800000
-  }
-];
+// In-memory Cork Notice Board Posts (Starts clean, real-time posts only)
+const boardPosts = [];
 
 // High-concurrency 20Hz Tickrate Batching Map
 const dirtyPlayers = new Map();

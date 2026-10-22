@@ -87,19 +87,49 @@ app.use((req, res) => {
 io.on('connection', (socket) => {
   console.log(`[Socket] Client connected: ${socket.id}`);
 
-  // 1. Player joins
-  socket.on('join', (data) => {
-    const { nickname, characterId, charIndex, x, y, id } = data;
+  // 1. Player joins (with real-time duplicate nickname prevention)
+  const handleJoin = (data, callback) => {
+    if (!data || typeof data !== 'object') {
+      if (typeof callback === 'function') callback({ success: false, message: '잘못된 요청입니다.' });
+      return;
+    }
+
+    const trimmedName = (data.nickname || '').trim();
+
+    // 1. Empty or whitespace check
+    if (!trimmedName) {
+      if (typeof callback === 'function') callback({ success: false, message: '닉네임을 입력해 주세요.' });
+      return;
+    }
+
+    if (trimmedName.length > 12) {
+      if (typeof callback === 'function') callback({ success: false, message: '닉네임은 최대 12자까지 가능합니다.' });
+      return;
+    }
+
+    const { characterId, charIndex, x, y, id } = data;
     const playerId = id || socket.id;
 
-    // Track socket mapping
-    socketToPlayerId.set(socket.id, playerId);
+    // 2. Active player duplicate nickname check (case-insensitive, exclude self reconnection)
+    const isDuplicate = Array.from(players.values()).some(
+      (p) => p.id !== playerId && p.nickname && p.nickname.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
 
+    if (isDuplicate) {
+      if (typeof callback === 'function') {
+        callback({ success: false, message: '이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.' });
+      }
+      return;
+    }
+
+    // 3. Track socket mapping & register player
+    socketToPlayerId.set(socket.id, playerId);
     const isExisting = players.has(playerId);
+
     const player = {
       id: playerId,
       socketId: socket.id,
-      nickname: nickname || '익명 트레이너',
+      nickname: trimmedName,
       characterId: characterId || 'red',
       charIndex: typeof charIndex === 'number' ? charIndex : 0,
       x: typeof x === 'number' ? x : 610,
@@ -110,6 +140,11 @@ io.on('connection', (socket) => {
     };
 
     players.set(playerId, player);
+
+    // Send success callback with registered player
+    if (typeof callback === 'function') {
+      callback({ success: true, player });
+    }
 
     // Send existing state to joined player
     socket.emit('init_state', {
@@ -136,7 +171,10 @@ io.on('connection', (socket) => {
       if (chatHistory.length > MAX_HISTORY) chatHistory.shift();
       socket.broadcast.emit('chat_message', systemMsg);
     }
-  });
+  };
+
+  socket.on('join', handleJoin);
+  socket.on('join_game', handleJoin);
 
   // 2. Player movement (buffered into 20Hz batching queue)
   socket.on('player_move', (data) => {

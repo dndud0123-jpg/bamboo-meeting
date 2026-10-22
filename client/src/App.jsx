@@ -384,67 +384,101 @@ export default function App() {
     };
   }, [selfId]);
 
-  // Handler: Join Room (protected with hasJoinedRef against StrictMode double calls)
-  const handleJoin = ({ nickname, charIndex }) => {
-    if (hasJoinedRef.current) return;
-    hasJoinedRef.current = true;
+  // Handler: Join Room (with server & local duplicate nickname verification)
+  const handleJoin = ({ nickname, charIndex }, callback) => {
+    const trimmed = (nickname || '').trim();
 
-    const profile = {
-      nickname,
-      charIndex: typeof charIndex === 'number' ? charIndex : 0
-    };
-    setMyProfile(profile);
-    myProfileRef.current = profile;
-    setJoined(true);
+    // 1. Check local tabs duplicate via BroadcastChannel cached players
+    const isLocalDuplicate = Object.values(players).some(
+      (p) => p.id !== selfId && p.nickname && p.nickname.trim().toLowerCase() === trimmed.toLowerCase()
+    );
 
-    const initialPlayer = {
-      id: selfId,
-      nickname,
-      charIndex: profile.charIndex,
-      x: 610,
-      y: 520,
-      direction: 'down',
-      isMoving: false,
-      bubble: null
-    };
-
-    // Store in keyed object
-    setPlayers(prev => ({
-      ...prev,
-      [selfId]: initialPlayer
-    }));
-
-    // Broadcast to other tabs
-    if (channelRef.current) {
-      channelRef.current.postMessage({
-        type: 'player_joined',
-        payload: initialPlayer
-      });
+    if (isLocalDuplicate) {
+      if (typeof callback === 'function') {
+        callback({ success: false, message: '이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.' });
+      }
+      return;
     }
 
-    // Emit to Socket.io server with consistent selfId
-    if (socketRef.current) {
-      socketRef.current.emit('join', {
+    const completeJoin = () => {
+      if (hasJoinedRef.current) return;
+      hasJoinedRef.current = true;
+
+      const profile = {
+        nickname: trimmed,
+        charIndex: typeof charIndex === 'number' ? charIndex : 0
+      };
+      setMyProfile(profile);
+      myProfileRef.current = profile;
+      setJoined(true);
+
+      const initialPlayer = {
         id: selfId,
-        nickname,
+        nickname: profile.nickname,
         charIndex: profile.charIndex,
         x: 610,
-        y: 520
-      });
-    }
+        y: 520,
+        direction: 'down',
+        isMoving: false,
+        bubble: null
+      };
 
-    // Welcome message
-    const welcomeMsg = {
-      id: 'msg_welcome_' + selfId,
-      senderId: 'system',
-      senderNickname: '시스템',
-      charIndex: profile.charIndex,
-      text: `[${nickname}] 님이 대나무숲 회의실에 입장하셨습니다!`,
-      timestamp: Date.now()
+      // Store in keyed object
+      setPlayers(prev => ({
+        ...prev,
+        [selfId]: initialPlayer
+      }));
+
+      // Broadcast to other tabs
+      if (channelRef.current) {
+        channelRef.current.postMessage({
+          type: 'player_joined',
+          payload: initialPlayer
+        });
+      }
+
+      // Welcome message
+      const welcomeMsg = {
+        id: 'msg_welcome_' + selfId,
+        senderId: 'system',
+        senderNickname: '시스템',
+        charIndex: profile.charIndex,
+        text: `[${profile.nickname}] 님이 대나무숲 회의실에 입장하셨습니다!`,
+        timestamp: Date.now()
+      };
+      addMessageSafely(welcomeMsg);
+      if (channelRef.current) {
+        channelRef.current.postMessage({ type: 'chat_message', payload: welcomeMsg });
+      }
     };
-    addMessageSafely(welcomeMsg);
-    if (channelRef.current) {
-      channelRef.current.postMessage({ type: 'chat_message', payload: welcomeMsg });
+
+    // 2. Emit to Socket.io server with verification callback
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('join', {
+        id: selfId,
+        nickname: trimmed,
+        charIndex,
+        x: 610,
+        y: 520
+      }, (response) => {
+        if (response && !response.success) {
+          if (typeof callback === 'function') {
+            callback(response);
+          }
+          return;
+        }
+
+        completeJoin();
+        if (typeof callback === 'function') {
+          callback({ success: true, player: response?.player });
+        }
+      });
+    } else {
+      // Offline fallback
+      completeJoin();
+      if (typeof callback === 'function') {
+        callback({ success: true });
+      }
     }
   };
 

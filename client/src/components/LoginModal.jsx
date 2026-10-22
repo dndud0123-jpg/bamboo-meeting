@@ -8,6 +8,7 @@ export default function LoginModal({ onJoin }) {
   const [nickname, setNickname] = useState('');
   const [selectedCharIndex, setSelectedCharIndex] = useState(2); // default: 2 (황구 시바)
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [spriteUrl, setSpriteUrl] = useState(() => getTransparentSpriteUrl() || spriteSheetSrc);
 
   useEffect(() => {
@@ -29,17 +30,31 @@ export default function LoginModal({ onJoin }) {
     e.preventDefault();
     const trimmed = nickname.trim();
     if (!trimmed) {
-      setError('닉네임을 입력해 주세요!');
+      setError('닉네임을 입력해 주세요.');
       return;
     }
     if (trimmed.length > 12) {
       setError('닉네임은 최대 12자까지 가능합니다.');
       return;
     }
-    onJoin({
-      nickname: trimmed,
-      charIndex: selectedCharIndex
-    });
+
+    setIsSubmitting(true);
+    setError('');
+
+    onJoin(
+      {
+        nickname: trimmed,
+        charIndex: selectedCharIndex
+      },
+      (response) => {
+        setIsSubmitting(false);
+        if (response && !response.success) {
+          setError(response.message || '이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.');
+        } else {
+          setError('');
+        }
+      }
+    );
   };
 
   const selectedChar = CHARACTERS_16[selectedCharIndex] || CHARACTERS_16[0];
@@ -77,9 +92,16 @@ export default function LoginModal({ onJoin }) {
               placeholder="예: 꼬부기, 피카츄, 기획자A"
               maxLength={12}
               autoFocus
-              className="w-full bg-[#10121d] border-2 border-slate-700 focus:border-yellow-400 focus:outline-hidden px-3 py-2 text-xs sm:text-sm text-yellow-100 rounded-lg tracking-wider placeholder:text-slate-500 font-sans"
+              className={`w-full bg-[#10121d] border-2 ${
+                error ? 'border-rose-500 ring-1 ring-rose-500' : 'border-slate-700 focus:border-yellow-400'
+              } focus:outline-hidden px-3 py-2 text-xs sm:text-sm text-yellow-100 rounded-lg tracking-wider placeholder:text-slate-500 font-sans transition-colors`}
             />
-            {error && <p className="text-xs text-rose-400 mt-1 font-bold">{error}</p>}
+            {error && (
+              <p className="text-xs sm:text-sm font-bold text-rose-500 mt-1.5 animate-pulse flex items-center gap-1 font-sans">
+                <span>⚠️</span>
+                <span>{error}</span>
+              </p>
+            )}
           </div>
 
           {/* 16-Character Selection (4x4 Grid) */}
@@ -134,10 +156,17 @@ export default function LoginModal({ onJoin }) {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full mt-2 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg border-2 border-emerald-400 flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all text-xs sm:text-sm tracking-wider"
+            disabled={isSubmitting}
+            className="w-full mt-2 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] disabled:opacity-50 text-white font-bold py-2.5 sm:py-3 px-4 rounded-lg border-2 border-emerald-400 flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-all text-xs sm:text-sm tracking-wider"
           >
-            회의실 입장하기
-            <ArrowRight size={16} />
+            {isSubmitting ? (
+              <span>입장 확인 중...</span>
+            ) : (
+              <>
+                <span>회의실 입장하기</span>
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
       </div>

@@ -41,6 +41,9 @@ const MAX_HISTORY = 100;
 // In-memory Cork Notice Board Posts (Starts clean, real-time posts only)
 const boardPosts = [];
 
+// Master Admin Key
+const ADMIN_KEY = process.env.ADMIN_PASSWORD || 'bamboo7788!';
+
 // High-concurrency 20Hz Tickrate Batching Map
 const dirtyPlayers = new Map();
 
@@ -315,6 +318,68 @@ io.on('connection', (socket) => {
     if (boardPosts[postIndex].authorId === uId) {
       boardPosts.splice(postIndex, 1);
       io.emit('post_deleted', { postId });
+    }
+  });
+
+  // --- 8. Master Admin System Handlers ---
+  socket.on('admin_login', ({ password }, callback) => {
+    if (password === ADMIN_KEY) {
+      socket.isAdmin = true;
+      console.log(`[Admin] Socket ${socket.id} authenticated as master admin`);
+      if (typeof callback === 'function') callback({ success: true });
+    } else {
+      if (typeof callback === 'function') {
+        callback({ success: false, message: '비밀번호가 올바르지 않습니다.' });
+      }
+    }
+  });
+
+  // 8-1. Admin Forced Post Deletion
+  socket.on('admin_delete_post', ({ postId }) => {
+    if (!socket.isAdmin) return;
+    const postIndex = boardPosts.findIndex((p) => p.id === postId);
+    if (postIndex !== -1) {
+      boardPosts.splice(postIndex, 1);
+      io.emit('post_deleted', { postId });
+      console.log(`[Admin] Post ${postId} deleted by admin`);
+    }
+  });
+
+  // 8-2. Admin Chat Message Deletion
+  socket.on('admin_delete_chat', ({ messageId }) => {
+    if (!socket.isAdmin) return;
+    const msgIdx = chatHistory.findIndex((m) => m.id === messageId);
+    if (msgIdx !== -1) {
+      chatHistory.splice(msgIdx, 1);
+    }
+    io.emit('chat_message_deleted', { messageId });
+    console.log(`[Admin] Chat message ${messageId} deleted by admin`);
+  });
+
+  // 8-3. Admin Kick User
+  socket.on('admin_kick_user', ({ targetSocketId, targetPlayerId }) => {
+    if (!socket.isAdmin) return;
+
+    let targetSocket = null;
+    if (targetSocketId) {
+      targetSocket = io.sockets.sockets.get(targetSocketId);
+    }
+
+    if (!targetSocket && targetPlayerId) {
+      for (const [sId, pId] of socketToPlayerId.entries()) {
+        if (pId === targetPlayerId) {
+          targetSocket = io.sockets.sockets.get(sId);
+          break;
+        }
+      }
+    }
+
+    if (targetSocket) {
+      console.log(`[Admin] User kicked: socket ${targetSocket.id}`);
+      targetSocket.emit('kicked_by_admin', {
+        reason: '회의실 관리자에 의해 퇴장 조치되었습니다.'
+      });
+      targetSocket.disconnect(true);
     }
   });
 

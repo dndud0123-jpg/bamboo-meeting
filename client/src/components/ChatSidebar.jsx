@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CharacterAvatar from './CharacterAvatar';
-import { QrCode, Send, Users, MessageSquare } from 'lucide-react';
+import { QrCode, Send, Users, MessageSquare, Trash2 } from 'lucide-react';
 
 export default function ChatSidebar({
   messages,
   onSendMessage,
   onSendReaction,
   onlineCount,
-  onOpenQR
+  onOpenQR,
+  onOpenUserList,
+  isAdmin = false,
+  onAdminDeleteChat
 }) {
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef(null);
@@ -47,10 +50,15 @@ export default function ChatSidebar({
             <h2 className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
               실시간 회의 피드
             </h2>
-            <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 mt-0.5">
+            <button
+              type="button"
+              onClick={onOpenUserList}
+              className="text-[10px] text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-1 mt-0.5 cursor-pointer hover:underline transition-colors"
+              title="참여자 목록 보기"
+            >
               <Users size={11} />
               <span>접속 {onlineCount}명 참여중</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -106,9 +114,26 @@ export default function ChatSidebar({
                     <span className="font-bold text-[11px] text-yellow-300 truncate">
                       {msg.senderNickname}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {formatTime(msg.timestamp)}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {formatTime(msg.timestamp)}
+                      </span>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`[관리자] [${msg.senderNickname}] 님의 메시지를 삭제하시겠습니까?\n"${msg.text}"`)) {
+                              if (onAdminDeleteChat) onAdminDeleteChat(msg.id);
+                            }
+                          }}
+                          className="p-0.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 rounded transition-colors cursor-pointer"
+                          title="관리자 권한 메시지 삭제"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div
                     className={`text-slate-200 font-sans break-words ${

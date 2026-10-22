@@ -58,7 +58,9 @@ export default function StickyNote({
   post,
   onLike,
   onDelete,
+  onAdminDelete,
   currentUserId,
+  isAdmin = false,
   rank = 0,
   index = 0
 }) {
@@ -126,21 +128,39 @@ export default function StickyNote({
           <span className="text-[10px] text-slate-500 font-mono">
             {formatRelativeTime(post.createdAt)}
           </span>
-          {isMyPost && onDelete && (
+          {isAdmin ? (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                if (window.confirm('이 메모를 삭제하시겠습니까?')) {
-                  onDelete(post.id);
+                if (window.confirm(`[관리자] '${post.title}' 메모를 강제 삭제하시겠습니까?`)) {
+                  if (onAdminDelete) onAdminDelete(post.id);
+                  else if (onDelete) onDelete(post.id);
                 }
               }}
-              className="p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-md transition-colors cursor-pointer"
-              title="메모 삭제"
-              aria-label="메모 삭제"
+              className="flex items-center gap-0.5 px-1.5 py-0.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-[10px] font-bold rounded shadow-xs transition-all cursor-pointer font-sans"
+              title="관리자 권한으로 삭제"
             >
-              <Trash2 size={13} />
+              <span>✕</span>
+              <span>관리자 삭제</span>
             </button>
+          ) : (
+            isMyPost && onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm('이 메모를 삭제하시겠습니까?')) {
+                    onDelete(post.id);
+                  }
+                }}
+                className="p-1 text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-md transition-colors cursor-pointer"
+                title="메모 삭제"
+                aria-label="메모 삭제"
+              >
+                <Trash2 size={13} />
+              </button>
+            )
           )}
         </div>
       </div>

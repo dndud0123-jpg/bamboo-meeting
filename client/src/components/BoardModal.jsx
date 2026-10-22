@@ -8,8 +8,10 @@ export default function BoardModal({
   posts = [],
   onLike,
   onDelete,
+  onAdminDelete,
   onOpenCreate,
-  currentUserId
+  currentUserId,
+  isAdmin = false
 }) {
   if (!isOpen) return null;
 
@@ -110,7 +112,9 @@ export default function BoardModal({
                   post={post}
                   onLike={onLike}
                   onDelete={onDelete}
+                  onAdminDelete={onAdminDelete}
                   currentUserId={currentUserId}
+                  isAdmin={isAdmin}
                   rank={idx + 1}
                   index={idx}
                 />

@@ -10,6 +10,9 @@ import ChatSidebar from './components/ChatSidebar';
 import QRCodeModal from './components/QRCodeModal';
 import BoardModal from './components/BoardModal';
 import PostCreateModal from './components/PostCreateModal';
+import AdminAuthModal from './components/AdminAuthModal';
+import UserListModal from './components/UserListModal';
+import { Lock, Shield } from 'lucide-react';
 
 export default function App() {
   const [joined, setJoined] = useState(false);
@@ -26,6 +29,18 @@ export default function App() {
   const [virtualDirection, setVirtualDirection] = useState(null);
   const [jumpSignal, setJumpSignal] = useState(0);
   const [remoteJumpTrigger, setRemoteJumpTrigger] = useState(null);
+
+  // Master Admin & Moderation States
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('isAdmin') === 'true';
+    }
+    return false;
+  });
+  const [adminAuthOpen, setAdminAuthOpen] = useState(false);
+  const [userListOpen, setUserListOpen] = useState(false);
+  const [isKicked, setIsKicked] = useState(false);
+  const [kickReason, setKickReason] = useState('');
 
   // Responsive device viewport tracker
   const [isDesktop, setIsDesktop] = useState(() => {
@@ -172,6 +187,8 @@ export default function App() {
           }
         } else if (type === 'board_post_deleted') {
           setBoardPosts(prev => prev.filter(p => p.id !== payload.postId));
+        } else if (type === 'chat_message_deleted') {
+          setMessages(prev => prev.filter(m => m.id !== payload.messageId));
         }
       };
     } catch (e) {
@@ -194,6 +211,16 @@ export default function App() {
           charIndex: myProfileRef.current.charIndex ?? 0,
           x: latestLocalPosRef.current.x,
           y: latestLocalPosRef.current.y
+        });
+      }
+
+      // Re-authenticate admin session on socket reconnect if previously authenticated
+      const savedAdminPw = sessionStorage.getItem('adminPassword');
+      if (savedAdminPw) {
+        socket.emit('admin_login', { password: savedAdminPw }, (res) => {
+          if (res && res.success) {
+            setIsAdmin(true);
+          }
         });
       }
     });
@@ -272,6 +299,18 @@ export default function App() {
       // Ignore own message echoes
       if (msg.senderId === selfId) return;
       addMessageSafelyRef.current(msg);
+    });
+
+    socket.on('chat_message_deleted', ({ messageId }) => {
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+    });
+
+    socket.on('kicked_by_admin', (data) => {
+      setIsKicked(true);
+      setKickReason(data?.reason || '회의실 관리자에 의해 퇴장 조치되었습니다.');
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
     });
 
     socket.on('post_created', (newPost) => {
@@ -372,6 +411,8 @@ export default function App() {
         socketRef.current.off('player_moved');
         socketRef.current.off('world_state_update');
         socketRef.current.off('chat_message');
+        socketRef.current.off('chat_message_deleted');
+        socketRef.current.off('kicked_by_admin');
         socketRef.current.off('post_created');
         socketRef.current.off('post_liked');
         socketRef.current.off('post_liked_updated');
@@ -648,7 +689,59 @@ export default function App() {
     });
   };
 
-  const isModalActive = !joined || qrOpen || isBoardOpen || isCreateOpen;
+  // --- Admin Moderation Handlers ---
+  const handleAdminLogin = (password, callback) => {
+    if (socketRef.current) {
+      socketRef.current.emit('admin_login', { password }, (response) => {
+        if (response && response.success) {
+          setIsAdmin(true);
+          sessionStorage.setItem('isAdmin', 'true');
+          sessionStorage.setItem('adminPassword', password);
+        }
+        if (typeof callback === 'function') callback(response);
+      });
+    } else {
+      if (typeof callback === 'function') callback({ success: false, message: '서버와 연결되어 있지 않습니다.' });
+    }
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    sessionStorage.removeItem('isAdmin');
+    sessionStorage.removeItem('adminPassword');
+  };
+
+  const handleAdminDeletePost = (postId) => {
+    if (socketRef.current) {
+      socketRef.current.emit('admin_delete_post', { postId });
+    }
+    setBoardPosts(prev => prev.filter(p => p.id !== postId));
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'board_post_deleted', payload: { postId } });
+    }
+  };
+
+  const handleAdminDeleteChat = (messageId) => {
+    if (socketRef.current) {
+      socketRef.current.emit('admin_delete_chat', { messageId });
+    }
+    setMessages(prev => prev.filter(m => m.id !== messageId));
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'chat_message_deleted', payload: { messageId } });
+    }
+  };
+
+  const handleAdminKickUser = (player) => {
+    if (!player) return;
+    if (socketRef.current) {
+      socketRef.current.emit('admin_kick_user', {
+        targetSocketId: player.socketId || player.id,
+        targetPlayerId: player.id
+      });
+    }
+  };
+
+  const isModalActive = !joined || qrOpen || isBoardOpen || isCreateOpen || adminAuthOpen || userListOpen || isKicked;
 
   return (
     <div className="w-screen h-[100dvh] overflow-hidden bg-slate-950 select-none">
@@ -708,7 +801,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Desktop Top-right Notice Board Button */}
+            {/* Desktop Top-right Notice Board & Admin Buttons */}
             <div className="absolute top-3 right-3 z-20 pointer-events-auto flex items-center gap-2">
               <button
                 type="button"
@@ -718,6 +811,29 @@ export default function App() {
               >
                 <span className="text-sm">📜</span>
                 <span className="tracking-wide">비밀 게시판</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setAdminAuthOpen(true)}
+                className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border shadow-lg cursor-pointer transition-all active:scale-95 ${
+                  isAdmin
+                    ? 'bg-rose-950/80 hover:bg-rose-900 border-rose-500/60 text-rose-300'
+                    : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+                title={isAdmin ? '마스터 관리자 모드 (클릭하여 관리)' : '마스터 관리자 로그인'}
+              >
+                {isAdmin ? (
+                  <>
+                    <Shield size={13} className="text-amber-400" />
+                    <span className="font-pixel text-yellow-300">관리자 모드</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock size={13} />
+                    <span className="font-sans">관리자</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -730,6 +846,9 @@ export default function App() {
               onSendReaction={handleSendMessage}
               onlineCount={Object.keys(players).length}
               onOpenQR={() => setQrOpen(true)}
+              onOpenUserList={() => setUserListOpen(true)}
+              isAdmin={isAdmin}
+              onAdminDeleteChat={handleAdminDeleteChat}
             />
           </div>
         </div>
@@ -760,6 +879,10 @@ export default function App() {
               myProfile={myProfile}
               onOpenBoard={() => setIsBoardOpen(true)}
               onOpenQR={() => setQrOpen(true)}
+              onOpenUserList={() => setUserListOpen(true)}
+              onOpenAdminAuth={() => setAdminAuthOpen(true)}
+              isAdmin={isAdmin}
+              onAdminDeleteChat={handleAdminDeleteChat}
             />
           </div>
 
@@ -788,8 +911,10 @@ export default function App() {
           posts={boardPosts}
           onLike={handleLikePost}
           onDelete={handleDeletePost}
+          onAdminDelete={handleAdminDeletePost}
           onOpenCreate={() => setIsCreateOpen(true)}
           currentUserId={selfId}
+          isAdmin={isAdmin}
         />
       )}
 
@@ -801,6 +926,41 @@ export default function App() {
           onSubmit={handleCreatePost}
           myProfile={myProfile}
         />
+      )}
+
+      {/* 7. Admin Auth Modal */}
+      <AdminAuthModal
+        isOpen={adminAuthOpen}
+        onClose={() => setAdminAuthOpen(false)}
+        isAdmin={isAdmin}
+        onLogin={handleAdminLogin}
+        onLogout={handleAdminLogout}
+      />
+
+      {/* 8. User List & Kick Modal */}
+      <UserListModal
+        isOpen={userListOpen}
+        onClose={() => setUserListOpen(false)}
+        players={players}
+        selfId={selfId}
+        isAdmin={isAdmin}
+        onKickUser={handleAdminKickUser}
+      />
+
+      {/* 9. Kicked By Admin Full-screen Warning Screen */}
+      {isKicked && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 text-white p-6 text-center select-none backdrop-blur-md">
+          <div className="text-5xl sm:text-6xl mb-4 animate-bounce">⚠️</div>
+          <h1 className="font-pixel text-xl sm:text-2xl text-rose-500 font-bold mb-2">
+            회의실에서 퇴장되었습니다
+          </h1>
+          <p className="text-sm sm:text-base text-slate-300 max-w-md font-sans mb-5 leading-relaxed">
+            {kickReason || '회의실 관리자에 의해 퇴장 조치되었습니다.'}
+          </p>
+          <div className="bg-rose-950/60 border border-rose-500/50 rounded-xl px-4 py-2 text-xs text-rose-300 font-mono">
+            재접속할 수 없습니다. 브라우저 창을 닫아주세요.
+          </div>
+        </div>
       )}
     </div>
   );

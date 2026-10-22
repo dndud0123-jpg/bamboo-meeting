@@ -1,13 +1,17 @@
 import React, { useEffect, useRef } from 'react';
 import CharacterAvatar from './CharacterAvatar';
-import { Users, QrCode } from 'lucide-react';
+import { Users, QrCode, Trash2, Shield, Lock } from 'lucide-react';
 
 export default function MobileTopChatHud({
   messages = [],
   onlineCount = 1,
   myProfile,
   onOpenBoard,
-  onOpenQR
+  onOpenQR,
+  onOpenUserList,
+  onOpenAdminAuth,
+  isAdmin = false,
+  onAdminDeleteChat
 }) {
   const feedEndRef = useRef(null);
 
@@ -38,13 +42,32 @@ export default function MobileTopChatHud({
               </span>
             </div>
           )}
-          <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-0.5 bg-slate-900/50 px-1 py-0.5 rounded border border-emerald-500/30">
+          <button
+            type="button"
+            onClick={onOpenUserList}
+            className="text-[10px] text-emerald-400 font-mono flex items-center gap-0.5 bg-slate-900/60 hover:bg-slate-800 px-1.5 py-0.5 rounded border border-emerald-500/30 cursor-pointer active:scale-95"
+            title="참여자 목록"
+          >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>{onlineCount}명</span>
-          </span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
+          {onOpenAdminAuth && (
+            <button
+              type="button"
+              onClick={onOpenAdminAuth}
+              className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-lg border shadow-md cursor-pointer transition-all active:scale-95 ${
+                isAdmin
+                  ? 'bg-rose-950/80 text-rose-300 border-rose-500/50'
+                  : 'bg-slate-900/80 text-slate-400 border-slate-700/60'
+              }`}
+              title={isAdmin ? '관리자 모드 활성' : '관리자 로그인'}
+            >
+              {isAdmin ? <Shield size={11} className="text-amber-400" /> : <Lock size={11} />}
+            </button>
+          )}
           {onOpenBoard && (
             <button
               type="button"
@@ -98,20 +121,37 @@ export default function MobileTopChatHud({
             return (
               <div
                 key={uniqueKey}
-                className="flex items-baseline gap-1.5 text-xs leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                className="flex items-baseline justify-between gap-1.5 text-xs leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
               >
-                <div className="flex items-center gap-1 shrink-0">
-                  <CharacterAvatar charIndex={msg.charIndex ?? 0} size="xs" />
-                  <span className="font-bold text-[11px] text-amber-300">
-                    {msg.senderNickname}:
-                  </span>
+                <div className="flex items-baseline gap-1.5 min-w-0">
+                  <div className="flex items-center gap-1 shrink-0">
+                    <CharacterAvatar charIndex={msg.charIndex ?? 0} size="xs" />
+                    <span className="font-bold text-[11px] text-amber-300">
+                      {msg.senderNickname}:
+                    </span>
+                  </div>
+                  {isReaction ? (
+                    <span className="text-sm animate-bounce inline-block">{msg.text}</span>
+                  ) : (
+                    <span className="text-slate-100 font-sans break-words text-xs">
+                      {msg.text}
+                    </span>
+                  )}
                 </div>
-                {isReaction ? (
-                  <span className="text-sm animate-bounce inline-block">{msg.text}</span>
-                ) : (
-                  <span className="text-slate-100 font-sans break-words text-xs">
-                    {msg.text}
-                  </span>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm(`[관리자] [${msg.senderNickname}] 님의 메시지를 삭제하시겠습니까?\n"${msg.text}"`)) {
+                        if (onAdminDeleteChat) onAdminDeleteChat(msg.id);
+                      }
+                    }}
+                    className="p-0.5 text-rose-400/80 hover:text-rose-300 active:scale-90 shrink-0"
+                    title="관리자 삭제"
+                  >
+                    <Trash2 size={11} />
+                  </button>
                 )}
               </div>
             );

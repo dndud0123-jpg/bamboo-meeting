@@ -9,6 +9,7 @@ export default function ChatSidebar({
   onlineCount,
   onOpenQR,
   onOpenUserList,
+  onSwitchToBoard,
   isAdmin = false,
   onAdminDeleteChat
 }) {
@@ -62,14 +63,29 @@ export default function ChatSidebar({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenQR}
-          className="flex items-center gap-1 text-[11px] font-bold bg-[#252844] hover:bg-[#343861] active:scale-95 text-yellow-300 px-2.5 py-1.5 rounded-lg border border-yellow-500/40 cursor-pointer shadow-sm transition-all"
-        >
-          <QrCode size={13} />
-          <span>QR 초대</span>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onSwitchToBoard && (
+            <button
+              type="button"
+              onClick={onSwitchToBoard}
+              className="flex items-center gap-1 text-[11px] font-bold bg-[#3d220f]/90 hover:bg-[#53341b] active:scale-95 text-amber-200 px-2.5 py-1.5 rounded-lg border border-amber-600/50 cursor-pointer shadow-sm transition-all font-sans"
+              title="코르크 게시판으로 전환"
+            >
+              <span>📌</span>
+              <span>게시판</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onOpenQR}
+            className="flex items-center gap-1 text-[11px] font-bold bg-[#252844] hover:bg-[#343861] active:scale-95 text-yellow-300 px-2.5 py-1.5 rounded-lg border border-yellow-500/40 cursor-pointer shadow-sm transition-all"
+            title="QR 코드 초대"
+          >
+            <QrCode size={13} />
+            <span>QR</span>
+          </button>
+        </div>
       </div>
 
       {/* 2. Chat Message List */}

@@ -9,6 +9,7 @@ import CharacterAvatar from './components/CharacterAvatar';
 import ChatSidebar from './components/ChatSidebar';
 import QRCodeModal from './components/QRCodeModal';
 import BoardModal from './components/BoardModal';
+import BoardSidebar from './components/BoardSidebar';
 import PostCreateModal from './components/PostCreateModal';
 import AdminAuthModal from './components/AdminAuthModal';
 import UserListModal from './components/UserListModal';
@@ -25,6 +26,12 @@ export default function App() {
   const [players, setPlayers] = useState({});
   const [messages, setMessages] = useState([]);
   const [qrOpen, setQrOpen] = useState(false);
+  const [isBoardOpen, setIsBoardOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [boardPosts, setBoardPosts] = useState([]);
+
+  // Sidebar Mode ('chat' | 'board') for PC Desktop View
+  const [sidebarMode, setSidebarMode] = useState('chat');
   const [joinUrl, setJoinUrl] = useState('');
   const [virtualDirection, setVirtualDirection] = useState(null);
   const [jumpSignal, setJumpSignal] = useState(0);
@@ -62,10 +69,7 @@ export default function App() {
     };
   }, []);
 
-  // Cork Notice Board state (Starts completely clean with 0 posts)
-  const [boardPosts, setBoardPosts] = useState([]);
-  const [isBoardOpen, setIsBoardOpen] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
 
   const socketRef = useRef(null);
   const channelRef = useRef(null);
@@ -741,7 +745,16 @@ export default function App() {
     }
   };
 
-  const isModalActive = !joined || qrOpen || isBoardOpen || isCreateOpen || adminAuthOpen || userListOpen || isKicked;
+  // Handler: Open Cork Board (PC: switch right sidebar, Mobile: open modal)
+  const handleOpenBoard = () => {
+    if (isDesktop) {
+      setSidebarMode(prev => (prev === 'board' ? 'chat' : 'board'));
+    } else {
+      setIsBoardOpen(true);
+    }
+  };
+
+  const isModalActive = !joined || qrOpen || (isBoardOpen && !isDesktop) || isCreateOpen || adminAuthOpen || userListOpen || isKicked;
 
   return (
     <div className="w-screen h-[100dvh] overflow-hidden bg-slate-950 select-none">
@@ -771,7 +784,7 @@ export default function App() {
                 virtualDirection={virtualDirection}
                 jumpSignal={jumpSignal}
                 remoteJumpTrigger={remoteJumpTrigger}
-                onOpenBoard={() => setIsBoardOpen(true)}
+                onOpenBoard={handleOpenBoard}
                 isModalOpen={isModalActive}
               />
             </div>
@@ -805,8 +818,12 @@ export default function App() {
             <div className="absolute top-3 right-3 z-20 pointer-events-auto flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setIsBoardOpen(true)}
-                className="flex items-center gap-1.5 text-xs font-pixel font-bold bg-[#3d220f]/90 hover:bg-[#53341b] active:scale-95 text-[#fef08a] px-3.5 py-1.5 rounded-xl border border-[#b45309]/80 cursor-pointer shadow-lg transition-all"
+                onClick={handleOpenBoard}
+                className={`flex items-center gap-1.5 text-xs font-pixel font-bold px-3.5 py-1.5 rounded-xl border cursor-pointer shadow-lg transition-all active:scale-95 ${
+                  sidebarMode === 'board'
+                    ? 'bg-amber-400 text-slate-950 border-amber-200 ring-2 ring-amber-400/50'
+                    : 'bg-[#3d220f]/90 hover:bg-[#53341b] text-[#fef08a] border-[#b45309]/80'
+                }`}
                 aria-label="비밀 게시판 열기"
               >
                 <span className="text-sm">📜</span>
@@ -838,18 +855,32 @@ export default function App() {
             </div>
           </div>
 
-          {/* Desktop Right Chat Sidebar */}
+          {/* Desktop Right Panel: ChatSidebar or BoardSidebar */}
           <div className="h-full w-80 md:w-96 shrink-0 z-20">
-            <ChatSidebar
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              onSendReaction={handleSendMessage}
-              onlineCount={Object.keys(players).length}
-              onOpenQR={() => setQrOpen(true)}
-              onOpenUserList={() => setUserListOpen(true)}
-              isAdmin={isAdmin}
-              onAdminDeleteChat={handleAdminDeleteChat}
-            />
+            {sidebarMode === 'board' ? (
+              <BoardSidebar
+                posts={boardPosts}
+                onLike={handleLikePost}
+                onDelete={handleDeletePost}
+                onAdminDelete={handleAdminDeletePost}
+                onOpenCreate={() => setIsCreateOpen(true)}
+                currentUserId={selfId}
+                isAdmin={isAdmin}
+                onBackToChat={() => setSidebarMode('chat')}
+              />
+            ) : (
+              <ChatSidebar
+                messages={messages}
+                onSendMessage={handleSendMessage}
+                onSendReaction={handleSendMessage}
+                onlineCount={Object.keys(players).length}
+                onOpenQR={() => setQrOpen(true)}
+                onOpenUserList={() => setUserListOpen(true)}
+                onSwitchToBoard={() => setSidebarMode('board')}
+                isAdmin={isAdmin}
+                onAdminDeleteChat={handleAdminDeleteChat}
+              />
+            )}
           </div>
         </div>
       ) : (
@@ -903,8 +934,8 @@ export default function App() {
         </div>
       )}
 
-      {/* 5. Cork Board Modal (Interactive Notice Board) */}
-      {isBoardOpen && (
+      {/* 5. Cork Board Modal (Interactive Notice Board - Mobile Viewport) */}
+      {!isDesktop && isBoardOpen && (
         <BoardModal
           isOpen={isBoardOpen}
           onClose={() => setIsBoardOpen(false)}

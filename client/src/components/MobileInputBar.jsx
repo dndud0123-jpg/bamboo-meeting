@@ -17,6 +17,9 @@ export default function MobileInputBar({
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const handleViewportChange = () => {
+      // Keep scroll anchored to 0 to prevent iOS viewport push
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
       const vv = window.visualViewport;
       // If visualViewport height is smaller than innerHeight, keyboard is open!
       const offset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
@@ -30,6 +33,16 @@ export default function MobileInputBar({
       window.visualViewport?.removeEventListener('scroll', handleViewportChange);
     };
   }, []);
+
+  const handleFocus = () => {
+    // iOS Safari auto-scroll reset to prevent viewport bounce
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    }, 50);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -92,6 +105,7 @@ export default function MobileInputBar({
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
+          onFocus={handleFocus}
           placeholder="메시지를 입력하세요..."
           maxLength={70}
           className="flex-1 bg-transparent text-white text-xs placeholder:text-slate-400 focus:outline-hidden font-sans"

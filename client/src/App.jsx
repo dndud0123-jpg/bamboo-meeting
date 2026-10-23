@@ -884,8 +884,8 @@ export default function App() {
           </div>
         </div>
       ) : (
-        /* Mobile Smartphone Layout: 100% Fullscreen Canvas, No Flex-Col, Zero Bottom Gap */
-        <div className="relative w-full h-full overflow-hidden select-none bg-[#0a0d14]">
+        /* Mobile Smartphone Layout: 100% Fullscreen Canvas, Fixed Inset to prevent Keyboard Push */
+        <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden select-none bg-[#0a0d14]">
           {/* 1. 배경 전체 캔버스 (화면 100% 바닥 끝까지 꽉 채움) */}
           <div className="absolute inset-0 w-full h-full z-0">
             <GameCanvas

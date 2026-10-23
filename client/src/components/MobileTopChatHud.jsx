@@ -25,11 +25,11 @@ export default function MobileTopChatHud({
 
   return (
     <div
-      className="w-full h-full pointer-events-auto bg-gradient-to-b from-slate-950/90 via-slate-950/65 to-transparent backdrop-blur-xs border-b border-white/10 px-3 py-2 flex flex-col justify-between select-none"
+      className="w-full h-full pointer-events-auto bg-gradient-to-b from-slate-950/80 via-slate-950/50 to-transparent backdrop-blur-xs border-b border-white/10 px-3 py-1.5 flex flex-col justify-between select-none"
       style={{ touchAction: 'pan-y' }}
     >
       {/* 1. Compact Header Row: Title + Status + Action Buttons */}
-      <div className="flex items-center justify-between gap-1.5 shrink-0 pb-1.5 border-b border-white/10">
+      <div className="flex items-center justify-between gap-1.5 shrink-0 pb-1 border-b border-white/10">
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="font-pixel text-yellow-300 font-bold text-xs tracking-wider whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             🎋 대나무숲
@@ -94,10 +94,10 @@ export default function MobileTopChatHud({
         </div>
       </div>
 
-      {/* 2. Expanded Chat Feed Overlay (Height doubled to ~38%, shows 5~7 messages with great readability) */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 pt-1.5 pr-0.5 scrollbar-none flex flex-col justify-start min-h-0">
+      {/* 2. Compact Chat Feed Overlay (Height fine-tuned to ~28%, displays 4~5 lines cleanly while saving map view) */}
+      <div className="flex-1 overflow-y-auto space-y-1 pt-1 pr-0.5 scrollbar-none flex flex-col justify-start min-h-0">
         {recentMessages.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-[11px] sm:text-xs text-slate-300/80 font-sans italic drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <div className="h-full flex items-center justify-center text-[11px] text-slate-300/80 font-sans italic drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             대나무숲에 오신 것을 환영합니다! 아래에서 대화를 시작해보세요.
           </div>
         ) : (
@@ -109,7 +109,7 @@ export default function MobileTopChatHud({
               return (
                 <div
                   key={uniqueKey}
-                  className="text-center text-[10px] sm:text-[11px] text-amber-300/90 font-sans drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] py-0.5"
+                  className="text-center text-[10px] text-amber-300/90 font-sans drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] py-0.5"
                 >
                   📢 {msg.text}
                 </div>
@@ -121,19 +121,19 @@ export default function MobileTopChatHud({
             return (
               <div
                 key={uniqueKey}
-                className="flex items-baseline justify-between gap-1.5 text-xs sm:text-sm leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                className="flex items-baseline justify-between gap-1.5 text-xs leading-snug drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
               >
                 <div className="flex items-baseline gap-1.5 min-w-0">
                   <div className="flex items-center gap-1 shrink-0">
                     <CharacterAvatar charIndex={msg.charIndex ?? 0} size="xs" />
-                    <span className="font-bold text-[11px] sm:text-xs text-amber-300">
+                    <span className="font-bold text-[11px] text-amber-300">
                       {msg.senderNickname}:
                     </span>
                   </div>
                   {isReaction ? (
-                    <span className="text-sm sm:text-base animate-bounce inline-block">{msg.text}</span>
+                    <span className="text-sm animate-bounce inline-block">{msg.text}</span>
                   ) : (
-                    <span className="text-slate-100 font-sans break-words text-xs sm:text-sm">
+                    <span className="text-slate-100 font-sans break-words text-xs">
                       {msg.text}
                     </span>
                   )}

@@ -902,8 +902,8 @@ export default function App() {
             />
           </div>
 
-          {/* 2. 상단 38% 반투명 플로팅 채팅창 (대화 가독성 2배 확장) */}
-          <div className="absolute top-0 left-0 right-0 h-[38%] min-h-[220px] max-h-[340px] z-20 pointer-events-auto">
+          {/* 2. 상단 28% 반투명 플로팅 채팅창 (맵 시야 균형을 위한 미세 축소) */}
+          <div className="absolute top-0 left-0 right-0 h-[28%] min-h-[160px] max-h-[250px] z-20 pointer-events-auto">
             <MobileTopChatHud
               messages={messages}
               onlineCount={Object.keys(players).length}

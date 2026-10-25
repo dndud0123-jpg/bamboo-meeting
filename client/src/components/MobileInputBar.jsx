@@ -6,24 +6,16 @@ export default function MobileInputBar({
   onSendReaction
 }) {
   const [inputText, setInputText] = useState('');
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const inputRef = useRef(null);
 
-  // Dynamic visualViewport tracker:
-  // Detects the exact height and offset of the mobile virtual keyboard
-  // so the input bar lifts up cleanly right above the keyboard without squashing the canvas.
+  // Keep scroll anchored to 0 on mobile viewport resize / scroll to prevent iOS push
   useEffect(() => {
     if (typeof window === 'undefined' || !window.visualViewport) return;
 
     const handleViewportChange = () => {
-      // Keep scroll anchored to 0 to prevent iOS viewport push
       window.scrollTo(0, 0);
       document.body.scrollTop = 0;
-      const vv = window.visualViewport;
-      // If visualViewport height is smaller than innerHeight, keyboard is open!
-      const offset = Math.max(0, window.innerHeight - (vv.height + vv.offsetTop));
-      setKeyboardOffset(offset);
     };
 
     window.visualViewport.addEventListener('resize', handleViewportChange);
@@ -35,7 +27,7 @@ export default function MobileInputBar({
   }, []);
 
   const handleFocus = () => {
-    // iOS Safari auto-scroll reset to prevent viewport bounce
+    // iOS Safari auto-scroll reset to keep top-pinned input firmly in place
     window.scrollTo(0, 0);
     document.body.scrollTop = 0;
     setTimeout(() => {
@@ -63,21 +55,16 @@ export default function MobileInputBar({
   };
 
   return (
-    <div
-      className="md:hidden absolute left-3 right-3 z-30 transition-[bottom] duration-150 ease-out select-none pointer-events-auto"
-      style={{
-        bottom: keyboardOffset > 0 ? `${keyboardOffset + 6}px` : '8px'
-      }}
-    >
+    <div className="w-full relative select-none pointer-events-auto">
       {/* Optional Quick Reaction Popup */}
       {showEmojiPicker && (
-        <div className="mb-2 bg-slate-900/90 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex items-center justify-around shadow-2xl animate-fadeIn">
+        <div className="mb-1.5 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-1.5 flex items-center justify-around shadow-2xl animate-fadeIn">
           {['👍', '❤️', '😭', '🔥', '🎉', '👋'].map((em) => (
             <button
               key={em}
               type="button"
               onClick={() => handleQuickEmoji(em)}
-              className="text-lg hover:scale-125 active:scale-95 transition-transform p-1 cursor-pointer"
+              className="text-base sm:text-lg hover:scale-125 active:scale-95 transition-transform p-1 cursor-pointer"
             >
               {em}
             </button>
@@ -85,19 +72,19 @@ export default function MobileInputBar({
         </div>
       )}
 
-      {/* Main Capsule Input Bar */}
+      {/* Main Top-Pinned Capsule Input Bar */}
       <form
         onSubmit={handleSubmit}
-        className="bg-slate-900/80 backdrop-blur-md rounded-full border border-white/20 px-3 py-1.5 flex items-center gap-2 shadow-2xl"
+        className="bg-slate-900/85 backdrop-blur-md rounded-full border border-slate-700/60 px-3 py-1 sm:py-1.5 flex items-center gap-2 shadow-lg"
       >
         <button
           type="button"
           onClick={() => setShowEmojiPicker((prev) => !prev)}
-          className="text-slate-400 hover:text-yellow-300 active:scale-90 transition-transform p-1 cursor-pointer"
+          className="text-slate-400 hover:text-yellow-300 active:scale-90 transition-transform p-0.5 cursor-pointer"
           title="이모지 선택"
           aria-label="이모지 선택"
         >
-          <Smile size={18} />
+          <Smile size={16} />
         </button>
 
         <input
@@ -114,14 +101,14 @@ export default function MobileInputBar({
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-all ${
             inputText.trim()
               ? 'bg-yellow-400 text-slate-950 shadow-md active:scale-90 cursor-pointer'
               : 'bg-slate-800 text-slate-500 cursor-not-allowed'
           }`}
           aria-label="전송"
         >
-          <Send size={13} className="ml-0.5" />
+          <Send size={12} className="ml-0.5" />
         </button>
       </form>
     </div>

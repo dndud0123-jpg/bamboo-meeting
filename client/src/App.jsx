@@ -902,8 +902,8 @@ export default function App() {
             />
           </div>
 
-          {/* 2. 상단 20% 반투명 플로팅 채팅창 (70% 슬림 축소로 맵 시야 확보) */}
-          <div className="absolute top-0 left-0 right-0 h-[20%] min-h-[110px] max-h-[160px] z-20 pointer-events-auto">
+          {/* 2. 상단 통합 채팅 영역 (헤더 + 상단 고정 입력창 + 대화 피드) */}
+          <div className="absolute top-0 left-0 right-0 z-20 pointer-events-auto">
             <MobileTopChatHud
               messages={messages}
               onlineCount={Object.keys(players).length}
@@ -914,7 +914,15 @@ export default function App() {
               onOpenAdminAuth={() => setAdminAuthOpen(true)}
               isAdmin={isAdmin}
               onAdminDeleteChat={handleAdminDeleteChat}
-            />
+            >
+              {/* 상단 헤더 바로 아래 고정 입력창 */}
+              <div className="my-1 px-0.5">
+                <MobileInputBar
+                  onSendMessage={handleSendMessage}
+                  onSendReaction={handleSendMessage}
+                />
+              </div>
+            </MobileTopChatHud>
           </div>
 
           {/* 3. 하단 좌/우 조작 컨트롤러 (D-Pad 좌측, 점프/이모지 우측) */}
@@ -923,14 +931,6 @@ export default function App() {
             onTriggerJump={() => setJumpSignal(s => s + 1)}
             onSendReaction={handleSendMessage}
           />
-
-          {/* 4. 최하단 반투명 플로팅 입력바 (바닥에 슬림하게 밀착) */}
-          <div className="absolute bottom-3 left-3 right-3 z-30 pb-[env(safe-area-inset-bottom)] pointer-events-auto">
-            <MobileInputBar
-              onSendMessage={handleSendMessage}
-              onSendReaction={handleSendMessage}
-            />
-          </div>
         </div>
       )}
 

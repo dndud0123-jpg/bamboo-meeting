@@ -21,13 +21,13 @@ export default function OverlayControls({
         return false;
       }}
     >
-      {/* Left Section: Multi-Touch 8-Way Virtual D-Pad (Positioned at bottom-16) */}
-      <div className="absolute bottom-16 left-3 sm:left-4 z-30 pointer-events-auto select-none touch-none">
+      {/* Left Section: Multi-Touch 8-Way Virtual D-Pad (Comfortable bottom-6 spacing) */}
+      <div className="absolute bottom-6 sm:bottom-8 left-3 sm:left-4 z-30 pointer-events-auto select-none touch-none">
         <VirtualDPad onDirectionChange={onDirectionChange} />
       </div>
 
-      {/* Right Section: Multi-Touch Independent Action Buttons (Positioned at bottom-16) */}
-      <div className="absolute bottom-16 right-3 sm:right-4 z-30 pointer-events-auto flex items-end gap-2 select-none touch-none">
+      {/* Right Section: Multi-Touch Independent Action Buttons (Comfortable bottom-6 spacing) */}
+      <div className="absolute bottom-6 sm:bottom-8 right-3 sm:right-4 z-30 pointer-events-auto flex items-end gap-2 select-none touch-none">
         {/* 3 Emoji Buttons */}
         <div className="flex flex-col gap-1.5 bg-slate-950/60 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-2xl">
           <button

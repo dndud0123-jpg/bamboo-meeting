@@ -35,7 +35,7 @@ const COLOR_MAP = {
   }
 };
 
-export default function PostDetailModal({
+function PostDetailModal({
   post,
   isOpen,
   onClose,
@@ -211,3 +211,5 @@ export default function PostDetailModal({
     </div>
   );
 }
+
+export default PostDetailModal;

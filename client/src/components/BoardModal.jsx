@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import StickyNote from './StickyNote';
+import PostDetailModal from './PostDetailModal';
 import { X, PenSquare, Sparkles, MessageSquare } from 'lucide-react';
 
 export default function BoardModal({
@@ -15,6 +16,13 @@ export default function BoardModal({
 }) {
   if (!isOpen) return null;
 
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  // Sync selectedPost with latest state from posts
+  const activePost = selectedPost
+    ? ((Array.isArray(posts) && posts.find((p) => p.id === selectedPost.id)) || selectedPost)
+    : null;
+
   // Ensure safe array handling and sort posts strictly in descending order of likes, then by newest
   const sortedPosts = useMemo(() => {
     const list = Array.isArray(posts) ? posts : [];
@@ -26,6 +34,7 @@ export default function BoardModal({
   }, [posts]);
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/75 backdrop-blur-sm select-none"
       onClick={onClose}
@@ -113,6 +122,7 @@ export default function BoardModal({
                   onLike={onLike}
                   onDelete={onDelete}
                   onAdminDelete={onAdminDelete}
+                  onSelectPost={setSelectedPost}
                   currentUserId={currentUserId}
                   isAdmin={isAdmin}
                   rank={idx + 1}
@@ -133,5 +143,17 @@ export default function BoardModal({
         </div>
       </div>
     </div>
+      {/* Post Detail Modal */}
+      <PostDetailModal
+        isOpen={Boolean(activePost)}
+        post={activePost}
+        onClose={() => setSelectedPost(null)}
+        onLike={onLike}
+        onDelete={onDelete}
+        onAdminDelete={onAdminDelete}
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+      />
+    </>
   );
 }

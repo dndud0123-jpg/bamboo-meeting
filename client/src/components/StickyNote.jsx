@@ -59,6 +59,7 @@ export default function StickyNote({
   onLike,
   onDelete,
   onAdminDelete,
+  onSelectPost,
   currentUserId,
   isAdmin = false,
   rank = 0,
@@ -91,7 +92,8 @@ export default function StickyNote({
 
   return (
     <div
-      className={`relative flex flex-col justify-between p-3.5 sm:p-4 rounded-xl border-2 ${theme.bg} ${theme.border} ${theme.shadow} shadow-lg transition-transform hover:-translate-y-1 min-h-[180px] text-stone-800 ${rotation}`}
+      className={`relative flex flex-col justify-between p-3.5 sm:p-4 rounded-xl border-2 ${theme.bg} ${theme.border} ${theme.shadow} shadow-lg transition-transform hover:-translate-y-1 min-h-[180px] text-stone-800 ${rotation} cursor-pointer`}
+      onClick={() => onSelectPost && onSelectPost(post)}
       style={{ touchAction: 'pan-y' }}
     >
       {/* 1. Masking Tape Decor on Top */}
@@ -166,7 +168,9 @@ export default function StickyNote({
       </div>
 
       {/* 3. Title & Body Content */}
-      <div className="flex-1 min-h-0 my-1">
+      <div className="flex-1 min-h-0 my-1 cursor-pointer"
+        onClick={() => onSelectPost && onSelectPost(post)}
+      >
         <h4 className="font-bold text-sm sm:text-base line-clamp-1 mb-1 text-slate-900 break-words leading-snug">
           {post.title}
         </h4>

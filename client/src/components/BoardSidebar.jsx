@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import StickyNote from './StickyNote';
+import PostDetailModal from './PostDetailModal';
 import { PenSquare, MessageSquare, Sparkles, ArrowLeft, X } from 'lucide-react';
 
 export default function BoardSidebar({
@@ -12,6 +13,13 @@ export default function BoardSidebar({
   isAdmin = false,
   onBackToChat
 }) {
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  // Sync selectedPost with latest state from posts
+  const activePost = selectedPost
+    ? ((Array.isArray(posts) && posts.find((p) => p.id === selectedPost.id)) || selectedPost)
+    : null;
+
   // Sort posts strictly in descending order of likes, then newest
   const sortedPosts = useMemo(() => {
     const list = Array.isArray(posts) ? posts : [];
@@ -103,6 +111,7 @@ export default function BoardSidebar({
                 onLike={onLike}
                 onDelete={onDelete}
                 onAdminDelete={onAdminDelete}
+                onSelectPost={setSelectedPost}
                 currentUserId={currentUserId}
                 isAdmin={isAdmin}
                 rank={idx + 1}
@@ -121,6 +130,17 @@ export default function BoardSidebar({
         </div>
         <span className="font-mono text-[9px] text-amber-400/60">PC 사이드바 뷰</span>
       </div>
+      {/* 4. Post Detail Modal */}
+      <PostDetailModal
+        isOpen={Boolean(activePost)}
+        post={activePost}
+        onClose={() => setSelectedPost(null)}
+        onLike={onLike}
+        onDelete={onDelete}
+        onAdminDelete={onAdminDelete}
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+      />
     </aside>
   );
 }
